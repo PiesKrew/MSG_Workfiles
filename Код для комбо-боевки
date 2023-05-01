@@ -1,0 +1,120 @@
+Пример кода с реализацией системы ближнего боя и связок ударов
+Связки:
+три слабых удара; 
+два слабых удара и один сильный удар; 
+два слабых удара, пауза, два слабых удара
+
+Можно использовать Animator с параметром "Attack" и скрипт для контроля комбо-ударов.
+В этом коде мы создаем класс CharacterCombat и используем его для управления комбо-ударами персонажа. 
+На каждый клик мыши вызывается метод PerformCombo, который определяет тип атаки (легкий или сильный удар) и увеличивает счетчик комбо
+Затем вызывается соответствующая анимация атаки
+
+Этот скрипт должен быть добавлен на игровой объект с аниматором, который содержит анимации атаки
+В аниматоре должен быть целочисленный параметр "Attack", который будет изменяться от -3 до 3 для управления различными анимациями атаки
+
+Цвет игрового объекта изменяется в зависимости от текущего комбо и типа удара
+
+Мы можем использовать массив векторов, чтобы хранить разные конечные позиции для каждого удара в комбо, и добавить визуальное представление завершающего удара.
+
+using System.Collections;
+using UnityEngine;
+
+public class CharacterCombat : MonoBehaviour
+{
+    private Renderer rend; // Компонент отображения для изменения цвета объекта
+    [SerializeField] private Transform attackObject; // Объект, который будет использоваться для представления атаки
+    [SerializeField] private float attackSpeed = 5.0f; // Скорость атаки
+    private float comboTimer; // Таймер для отслеживания времени между ударами комбо
+    private int currentCombo; // Текущее количество ударов в комбо
+    [SerializeField] private float comboDelay = 0.5f; // Задержка между ударами комбо
+
+    // Массив с разными конечными позициями для каждого удара в комбо
+    [SerializeField] private Vector3[] attackPositions;
+
+    private void Awake()
+    {
+        rend = GetComponent<Renderer>(); // Получение компонента Renderer для изменения цвета
+    }
+
+    private void Update()
+    {
+        // Проверка нажатия кнопок мыши для атаки
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+        {
+            bool lightAttack = Input.GetMouseButtonDown(0); // Определение типа атаки (легкая или сильная)
+            PerformCombo(lightAttack); // Выполнение атаки в зависимости от типа
+        }
+
+        // Обновление таймера комбо
+        if (comboTimer > 0)
+        {
+            comboTimer -= Time.deltaTime;
+        }
+        else
+        {
+            currentCombo = 0; // Сброс комбо, если время истекло
+        }
+
+        // Возвращение объекта атаки в начальное положение со временем
+        attackObject.localPosition = Vector3.Lerp(attackObject.localPosition, Vector3.zero, attackSpeed * Time.deltaTime);
+    }
+
+    // Выполнение комбо-атаки в зависимости от типа атаки
+    private void PerformCombo(bool lightAttack)
+    {
+        currentCombo++; // Увеличение текущего комбо
+        UpdateColorBasedOnCombo(lightAttack); // Обновление цвета объекта в зависимости от комбо
+        comboTimer = comboDelay; // Обновление таймера комбо
+        StartCoroutine(PerformAttack()); // Выполнение атаки с анимацией
+    }
+
+    // Обновление цвета объекта в зависимости от текущего комбо и типа атаки
+    private void UpdateColorBasedOnCombo(bool lightAttack)
+    {
+        Color newColor = Color.white;
+
+        switch (currentCombo)
+        {
+            case 1:
+                newColor = lightAttack ? Color.yellow : Color.red;
+                break;
+            case 2:
+                newColor = lightAttack ? Color.green : Color.magenta;
+                break;
+            default:
+                newColor = lightAttack ? Color.blue : Color.cyan;
+                currentCombo = 0; // Сброс комбо после завершения
+                break;
+        }
+
+        rend.material.color = newColor; // Применение нового цвета к объекту
+    }
+
+    // Выполнение атаки с анимацией перемещения объекта атаки
+    private IEnumerator PerformAttack()
+    {
+        // Выбор позиции для атаки на основе текущего комбо
+        Vector3 endPosition = attackPositions[Mathf.Clamp(currentCombo - 1, 0, attackPositions.Length - 1)];
+
+        // Выбор начального положения, ближайшего к текущему положению объекта атаки, для плавного перехода между ударами
+        Vector3 startPosition = Vector3.Lerp(attackObject.localPosition, Vector3.zero, attackSpeed * Time.deltaTime);
+
+        float progress = 0;
+
+        // Интерполяция объекта атаки между начальным и конечным положениями
+        while (progress < 1)
+        {
+            attackObject.localPosition = Vector3.Lerp(startPosition, endPosition, progress);
+            progress += attackSpeed * Time.deltaTime;
+            yield return null;
+        }
+
+        // Если это последний удар в комбо, добавьте визуальное представление завершающего удара
+        if (currentCombo == 0)
+        {
+            // Здесь вы можете добавить визуальный эффект для завершающего удара
+        }
+
+        attackObject.localPosition = endPosition; // Установка конечной позиции атаки
+    }
+}
