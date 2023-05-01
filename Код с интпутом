@@ -1,0 +1,39 @@
+Надо создать новый Input Action Asset (Assets > Create > Input Actions) и настроить ввод, добавив Action Map;
+Затем добавить действия (например, "LightAttack" и "HeavyAttack") и привяжзать их к соответствующим кнопкам (например, к левой и правой кнопкам мыши)
+
+using System.Collections;
+using UnityEngine;
+using UnityEngine.InputSystem; // Импортируйте пространство имен InputSystem
+
+public class CharacterCombat : MonoBehaviour
+{
+    // ... Остальные переменные ...
+
+    private InputMaster controls; // Создайте переменную для хранения объекта InputMaster
+
+    private void Awake()
+    {
+        // ... Остальная инициализация ...
+
+        controls = new InputMaster(); // Инициализация объекта InputMaster
+
+        // Добавьте обработчики событий для атак
+        controls.Player.LightAttack.performed += ctx => PerformCombo(true);
+        controls.Player.HeavyAttack.performed += ctx => PerformCombo(false);
+    }
+
+    private void OnEnable()
+    {
+        controls.Enable(); // Включите ввод при активации объекта
+    }
+
+    private void OnDisable()
+    {
+        controls.Disable(); // Отключите ввод при деактивации объекта
+    }
+
+    // ... Остальные методы ...
+}
+
+
+// Плюс из предыдущего вараинта кода надо удалить обработку ввода в методе Update, так как теперь она обрабатывается с помощью событий Input System
